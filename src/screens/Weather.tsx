@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   Platform,
+  useColorScheme,
 } from 'react-native';
 import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import Geolocation from 'react-native-geolocation-service';
@@ -18,6 +19,7 @@ import {
 } from '../api/weatherService';
 import LinearGradient from 'react-native-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Country & City Data
 const countryCityMap: { [key: string]: string[] } = {
@@ -41,16 +43,21 @@ const weatherGradients: { [key: string]: string[] } = {
 };
 
 
-const Weather = () => {
-      const [selectedCountry, setSelectedCountry] = useState<string>('USA');
-      const [selectedCity, setSelectedCity] = useState<string>('New York');
+import { NavigationProp } from '@react-navigation/native';
+
+const Weather = ({navigation}: {navigation: NavigationProp<any>}) => {
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === 'dark';
+  const [selectedCountry, setSelectedCountry] = useState<string>('USA');
+  const [selectedCity, setSelectedCity] = useState<string>('New York');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
- const [gradient, setGradient] = useState<string[]>(
-   weatherGradients['Default'],
- );
+  const [gradient, setGradient] = useState<string[]>(
+    weatherGradients['Default'],
+  );
 
   useEffect(() => {
+    loadStoredPreferences();
     requestLocationPermission();
   }, []);
 
@@ -71,9 +78,9 @@ const Weather = () => {
     }
   };
 
-    useEffect(() => {
-      fetchWeather(selectedCity);
-    }, [selectedCity]);
+  useEffect(() => {
+    fetchWeather(selectedCity);
+  }, [selectedCity]);
 
   // Get weather using live location
   const getCurrentLocationWeather = () => {
@@ -109,6 +116,7 @@ const Weather = () => {
       const data = await getWeatherByCity(city);
       setWeather(data);
       updateGradient(data.weather[0].main);
+      savePreferences(selectedCountry, city);
     } catch (error) {
       console.error(error);
     } finally {
@@ -120,9 +128,31 @@ const Weather = () => {
     setGradient(weatherGradients[condition] || weatherGradients['Default']);
   };
 
+  const savePreferences = async (country: string, city: string) => {
+    try {
+      await AsyncStorage.setItem('selectedCountry', country);
+      await AsyncStorage.setItem('selectedCity', city);
+    } catch (error) {
+      console.error('Error saving preferences', error);
+    }
+  };
+
+  const loadStoredPreferences = async () => {
+    try {
+      const country = await AsyncStorage.getItem('selectedCountry');
+      const city = await AsyncStorage.getItem('selectedCity');
+      if (country && city) {
+        setSelectedCountry(country);
+        setSelectedCity(city);
+      }
+    } catch (error) {
+      console.error('Error loading preferences', error);
+    }
+  };
+
   return (
     <LinearGradient colors={gradient} style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={isDarkMode ? 'dark-content' : 'light-content'} />
 
       <Text style={styles.label}>Select Country</Text>
       <Picker
@@ -177,6 +207,9 @@ const Weather = () => {
       ) : (
         <Text style={styles.error}>Could not fetch weather data.</Text>
       )}
+      <TouchableOpacity onPress={() => navigation.navigate('Credits')}>
+        <Text style={styles.creditsButton}>Credits & Version</Text>
+      </TouchableOpacity>
     </LinearGradient>
   );
 };
@@ -229,17 +262,18 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 18,
-    color: "white",
+    color: 'white',
     marginTop: 10,
   },
   picker: {
     width: 200,
     height: 50,
-    color: "white",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    color: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 10,
     marginBottom: 10,
-  }
+  },
+  creditsButton: {fontSize: 16, color: 'white', marginBottom: 10},
 });
 
 export default Weather;
