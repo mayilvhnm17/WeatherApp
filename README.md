@@ -10,8 +10,10 @@ A simple and elegant weather application built using React Native. The app provi
 ## Screenshots
 
 ### 🌤️ Home Screen
-![Location](screenshots/Newyork.jpg)
-![Current Location](screenshots/currentloc.jpg)
+<p align="center">
+  <img src="screenshots/Newyork.jpg" alt="Location" width="200">
+  <img src="screenshots/currentloc.jpg" alt="CurrentLocation" width="200">
+</p>
 
 ## Download APK
 [Click here to download the APK](https://drive.google.com/file/d/1bwpzcF1bNlxWJoTTAwMqsxr_Iq7vh2KG/view?usp=drive_link)
